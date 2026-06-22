@@ -1,0 +1,2 @@
+-- Vantage: Supabase/PostgreSQL schema
+-- Tables: users, vouchers, settled_payments
