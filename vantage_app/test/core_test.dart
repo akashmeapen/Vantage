@@ -22,6 +22,9 @@ void main() {
         id: 'v-123',
         issuerId: await VantageCrypto.publicKeyToHex(keyPair),
         amount: 50.0,
+        currency: 'USD',
+        status: 'minted',
+        payload: 'test',
         createdAt: DateTime.now(),
         expiresAt: DateTime.now().add(const Duration(days: 30)),
       );
@@ -49,6 +52,9 @@ void main() {
         id: 'v-456',
         issuerId: await VantageCrypto.publicKeyToHex(mintKeys),
         amount: 25.0,
+        currency: 'USD',
+        status: 'minted',
+        payload: 'test',
         createdAt: DateTime.now(),
         expiresAt: DateTime.now().add(const Duration(days: 1)),
       );

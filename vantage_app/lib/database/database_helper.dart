@@ -35,6 +35,8 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         public_key TEXT NOT NULL,
         private_key_data TEXT NOT NULL, -- Hex or Base64 encoded
+        user_id TEXT,
+        display_name TEXT,
         created_at TEXT NOT NULL
       )
     ''');
@@ -45,6 +47,9 @@ class DatabaseHelper {
         id TEXT PRIMARY KEY,
         issuer_id TEXT NOT NULL,
         amount REAL NOT NULL,
+        currency TEXT NOT NULL,
+        status TEXT NOT NULL,
+        payload TEXT NOT NULL,
         created_at TEXT NOT NULL,
         expires_at TEXT NOT NULL,
         signature TEXT NOT NULL
@@ -64,13 +69,28 @@ class DatabaseHelper {
 
   // --- CRUD Operations for Keys ---
   
-  Future<void> saveKeys(String publicKey, String privateKeyData) async {
+  Future<void> saveKeys(String publicKey, String privateKeyData, {String? userId, String? displayName}) async {
     final db = await instance.database;
     await db.insert('user_keys', {
       'public_key': publicKey,
       'private_key_data': privateKeyData,
+      'user_id': userId,
+      'display_name': displayName,
       'created_at': DateTime.now().toIso8601String(),
     });
+  }
+
+  Future<void> updateUserData(String publicKey, String userId, String displayName) async {
+    final db = await instance.database;
+    await db.update(
+      'user_keys',
+      {
+        'user_id': userId,
+        'display_name': displayName,
+      },
+      where: 'public_key = ?',
+      whereArgs: [publicKey],
+    );
   }
 
   Future<Map<String, dynamic>?> getLatestKeys() async {
@@ -89,6 +109,9 @@ class DatabaseHelper {
         'id': voucher.id,
         'issuer_id': voucher.issuerId,
         'amount': voucher.amount,
+        'currency': voucher.currency,
+        'status': voucher.status,
+        'payload': voucher.payload,
         'created_at': voucher.createdAt.toIso8601String(),
         'expires_at': voucher.expiresAt.toIso8601String(),
         'signature': voucher.signature ?? '',
@@ -105,6 +128,9 @@ class DatabaseHelper {
         id: json['id'] as String,
         issuerId: json['issuer_id'] as String,
         amount: json['amount'] as double,
+        currency: json['currency'] as String,
+        status: json['status'] as String,
+        payload: json['payload'] as String,
         createdAt: DateTime.parse(json['created_at'] as String),
         expiresAt: DateTime.parse(json['expires_at'] as String),
         signature: json['signature'] as String,

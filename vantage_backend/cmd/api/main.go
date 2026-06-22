@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"vantage_backend/internal/db"
+	"vantage_backend/internal/handlers"
 
 	"github.com/joho/godotenv"
 )
@@ -37,8 +38,21 @@ func main() {
 	defer database.Close()
 	log.Println("Database connected successfully ✓")
 
+	// ── Run migrations ───────────────────────────────────────────
+	if err := db.RunMigrations(database); err != nil {
+		log.Fatalf("FATAL: Database migrations failed: %v", err)
+	}
+
+	// ── Initialize handlers environment ──────────────────────────
+	env := &handlers.Env{DB: database}
+
 	// ── Register routes ──────────────────────────────────────────
 	mux := http.NewServeMux()
+
+	// Register handlers
+	mux.HandleFunc("/register", env.Register)
+	mux.HandleFunc("/mint-voucher", env.MintVoucher)
+	mux.HandleFunc("/settle-payment", env.SettlePayment)
 
 	// Health check — verifies the server is up and DB is reachable.
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +68,6 @@ func main() {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{
 			"status":   "healthy",
@@ -62,9 +75,16 @@ func main() {
 		})
 	})
 
+	// Wrap mux with middlewares (applied bottom-up)
+	var handler http.Handler = mux
+	handler = handlers.JSONContentTypeMiddleware(handler)
+	handler = handlers.CORSMiddleware(handler)
+	handler = handlers.LoggingMiddleware(handler)
+	handler = handlers.RecoverMiddleware(handler)
+
 	// ── Start server ─────────────────────────────────────────────
 	log.Printf("Vantage Backend starting on port :%s", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatalf("FATAL: Server failed to start: %v", err)
 	}
 }

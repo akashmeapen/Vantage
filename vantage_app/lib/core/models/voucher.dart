@@ -11,6 +11,9 @@ class Voucher {
   final String id;
   final String issuerId; // Public key of the issuer
   final double amount;
+  final String currency;
+  final String status;
+  final String payload;
   final DateTime createdAt;
   final DateTime expiresAt;
   
@@ -21,6 +24,9 @@ class Voucher {
     required this.id,
     required this.issuerId,
     required this.amount,
+    required this.currency,
+    required this.status,
+    required this.payload,
     required this.createdAt,
     required this.expiresAt,
     this.signature,
@@ -30,5 +36,5 @@ class Voucher {
   Map<String, dynamic> toJson() => _$VoucherToJson(this);
 
   /// Returns the data string that should be signed.
-  String get signingData => "$id|$issuerId|$amount|${createdAt.toIso8601String()}|${expiresAt.toIso8601String()}";
+  String get signingData => "$id|$issuerId|$amount|$currency|$status|$payload|${createdAt.toIso8601String()}|${expiresAt.toIso8601String()}";
 }
